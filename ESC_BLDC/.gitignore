@@ -1,0 +1,33 @@
+# Objekt- und Abhängigkeitsdateien
+*.o
+*.d
+
+# Linker- und Build-Ausgaben
+*.elf
+*.hex
+*.eep
+*.lss
+*.map
+*.srec
+
+# Makefile-Zwischendateien
+Makefile
+makedep.mk
+
+# Microchip Studio / Atmel Studio
+*.atsuo
+*.atsln
+*.componentinfo.xml
+
+# Debug / Simulation
+*.dbg
+*.cache
+
+# Backup- und temporäre Dateien
+*~
+*.bak
+*.tmp
+
+# OS-spezifisch
+.DS_Store
+Thumbs.db

@@ -1,0 +1,54 @@
+# --- Microchip / Atmel Studio ---
+# Build output folders
+/[Dd]ebug/
+/[Rr]elease/
+/[Bb]uild/
+/bin/
+/obj/
+
+# ELF & Flash images
+*.elf
+*.hex
+*.lss
+*.eep
+*.map
+
+# Intermediate/temporary
+*.tmp
+*.log
+*.cachefile
+*.d
+
+# User settings (IDE-specific)
+*.atsuo
+*.user
+
+# Object & archive libs
+*.o
+*.a
+
+# Visual Studio/MSBuild generische Dateien
+*.aps
+*.ncb
+*.sdf
+*.opensdf
+ipch/
+*.tlog
+
+# Backup/Temp
+*~
+*.bak
+*.swp
+*.swo
+
+# Optional: VS Code falls vorhanden
+.vscode/
+
+# Optional: CMake falls verwendet
+/CMakeFiles/
+/CMakeCache.txt
+/cmake_install.cmake
+/compile_commands.json
+
+# Optional: CLion/JetBrains
+/.idea/
