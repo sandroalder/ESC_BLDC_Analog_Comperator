@@ -66,6 +66,33 @@ void BLDC_change_Phase (uint8_t Phase);
 #define BEMF_C_PCTRL	PIN1CTRL
 
 
+/////////////////////////////////////////////////////////////////
+// Motor_BEMF_Analog Comperator
+
+#define BEMF_Port_AC		PORTD
+#define BEMF_Mid_AC			PIN5_bm
+#define BEMF_A_AC			PIN4_bm
+#define BEMF_B_AC			PIN2_bm
+#define BEMF_C_AC			PIN1_bm
+
+#define BEMF_Mid_AC_PCTRL	PIN5CTRL
+#define BEMF_A_AC_PCTRL		PIN4CTRL
+#define BEMF_B_AC_PCTRL		PIN2CTRL
+#define BEMF_C_AC_PCTRL		PIN1CTRL
+
+#define BEMF_NEG_AC			AC_MUXNEG_PIN1_gc // N1 als Negativer Input für Mid_V
+#define BEMF_A_POS_AC		AC_MUXPOS_PIN1_gc // Positiver Input muss immer geändert werden, da nur ein Comparator vorhanden
+#define BEMF_B_POS_AC		AC_MUXPOS_PIN0_gc
+#define BEMF_C_POS_AC		AC_MUXPOS_PIN3_gc
+
+
+/////////////////////////////////////////////////////////////////
+
+void BEMF_AC_init (void);
+
+void BLDC_AC_set(uint8_t Phase);
+
+
 void BEMF_ADC_init (void);
 
 uint8_t ADC_read_Mid_V (void);

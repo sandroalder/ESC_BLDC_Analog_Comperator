@@ -58,7 +58,7 @@ void PWM_calibrate (uint16_t raw_pulse)
 	scaling_5_Zaehler = (float)scaling_5 * 256;
 }
 
-uint32_t Multishot_read (void)
+uint16_t Multishot_read (void)
 {
     uint32_t tmp;
 

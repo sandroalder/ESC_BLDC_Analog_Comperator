@@ -34,24 +34,6 @@ void BLDC_PWM_Init (void)
 	
 	// PORTB als Ausgang
 	PORTMUX.TCAROUTEA = PORTMUX_TCA0_PORTB_gc;
-	
-	/* Split mode */
-	// select prescaler
-	// mit prescaler 2 ein increment alle 0.1uS bei einem 20MHz Takt
-	// TCA0.SPLIT.CTRLA |= TCA_SPLIT_CLKSEL_DIV1_gc;
-		
-	// TCA0.SPLIT.CTRLD	=	TCA_SPLIT_SPLITM_bm;
-	// Aktiviere unteren compare match für den PWM
-	// TCA0.SPLIT.CTRLB	=	TCA_SPLIT_LCMP0EN_bm;
-	
-	// setze duty cycle auf 25uS / macht 40kHz Regelfrequenz
-	// TCA0.SPLIT.LPER = 255;	// mit 255 sind es 39.22 kHz
-	// compare match auf 0
-	// TCA0.SPLIT.LCMP0 = 0;
-	
-	// starte Timer
-	// TCA0.SPLIT.CTRLA	|=  TCA_SPLIT_ENABLE_bm;
-		
 		
 	/* Non Split mode */
 	// select prescaler
@@ -255,6 +237,7 @@ void BLDC_change_Phase (uint8_t Phase)
 /////////////////////////////////////////////////////////////////
 // Motor_BEMF
 
+
 void BEMF_ADC_init (void)
 {
 	// Schalte digitale Input Buffer aus
@@ -277,6 +260,85 @@ void BEMF_ADC_init (void)
 	ADC0_CTRLC	=	ADC_REFSEL_VREFA_gc
 				|	ADC_PRESC_DIV8_gc;
 }
+
+void BEMF_AC_init (void)
+{
+	// Nur nötig wegen Quick-Fix auf Hardware. Könnte später entfernt werden
+	PORTC.PIN7CTRL &= ~PORT_ISC_gm;
+	PORTC.PIN7CTRL |= PORT_ISC_INPUT_DISABLE_gc;
+	PORTD.PIN3CTRL &= ~PORT_ISC_gm;
+	PORTD.PIN3CTRL |= PORT_ISC_INPUT_DISABLE_gc;
+	PORTD.PIN0CTRL &= ~PORT_ISC_gm;
+	PORTD.PIN0CTRL |= PORT_ISC_INPUT_DISABLE_gc;
+	
+	// Schalte digitale Input Buffer aus
+	BEMF_Port_AC.BEMF_Mid_AC_PCTRL	&= ~PORT_ISC_gm;
+	BEMF_Port_AC.BEMF_Mid_AC_PCTRL	|= PORT_ISC_INPUT_DISABLE_gc;
+	BEMF_Port_AC.BEMF_A_AC_PCTRL	&= ~PORT_ISC_gm;
+	BEMF_Port_AC.BEMF_A_AC_PCTRL	|= PORT_ISC_INPUT_DISABLE_gc;
+	BEMF_Port_AC.BEMF_B_AC_PCTRL	&= ~PORT_ISC_gm;
+	BEMF_Port_AC.BEMF_B_AC_PCTRL	|= PORT_ISC_INPUT_DISABLE_gc;
+	BEMF_Port_AC.BEMF_C_AC_PCTRL	&= ~PORT_ISC_gm;
+	BEMF_Port_AC.BEMF_C_AC_PCTRL	|= PORT_ISC_INPUT_DISABLE_gc;
+	
+	AC0.MUXCTRLA = BEMF_NEG_AC;			// setze Mid_V auf negativen Input
+	AC0.CTRLA |= AC_HYSMODE_10mV_gc;	// Hysterese
+
+	// Aktiviere AC und setze ihn auf beide Flanken
+	AC0.CTRLA = AC_ENABLE_bm | AC_INTMODE_BOTHEDGE_gc;
+}
+
+void BLDC_AC_set(uint8_t Phase)
+{
+	switch (Phase)
+	{
+		case 1:
+		{
+			if (reverse == 0)
+				AC0.MUXCTRLA = BEMF_C_POS_AC | BEMF_NEG_AC;
+			else
+				AC0.MUXCTRLA = BEMF_B_POS_AC | BEMF_NEG_AC;
+			break;
+		}
+		case 2:
+		{
+			if (reverse == 0)
+				AC0.MUXCTRLA = BEMF_B_POS_AC | BEMF_NEG_AC;
+			else
+				AC0.MUXCTRLA = BEMF_C_POS_AC | BEMF_NEG_AC;
+			break;
+		}
+		case 3:
+		{
+				AC0.MUXCTRLA = BEMF_A_POS_AC | BEMF_NEG_AC;
+			break;
+		}
+		case 4:
+		{
+			if (reverse == 0)
+				AC0.MUXCTRLA = BEMF_C_POS_AC | BEMF_NEG_AC;
+			else
+				AC0.MUXCTRLA = BEMF_B_POS_AC | BEMF_NEG_AC;
+			break;
+		}
+		case 5:
+		{
+			if (reverse == 0)
+				AC0.MUXCTRLA = BEMF_B_POS_AC | BEMF_NEG_AC;
+			else
+				AC0.MUXCTRLA = BEMF_C_POS_AC | BEMF_NEG_AC;
+			break;
+		}
+		case 6:
+		{
+			AC0.MUXCTRLA = BEMF_A_POS_AC | BEMF_NEG_AC;
+		break;
+		}
+	}
+	//AC0.INTCTRL = AC_CMP_bm; // Aktiviere Interrupt
+	return;
+}
+
 
 //  ADC Wert einlesen und filtern
 uint8_t ADC_read_and_filter(void)

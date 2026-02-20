@@ -68,7 +68,6 @@ volatile uint8_t reverse_flag = 0;
 // globale variable / wird in Interrupt Routine gebraucht
 // volatile sollte verwendet werden, wenn variable in Interrupt Routine verwendet wird
 volatile uint16_t Timer_Drehzahl = 0xFFFF;
-volatile uint16_t Timer_Kommutierung = 0;
 volatile uint16_t Kommutierung = 0;
 
 volatile uint8_t Phase = 1;
@@ -85,7 +84,7 @@ void BLDC_C_Angle_init (void)
 	// mit prescaler 2 ein increment alle 0.1uS bei einem 20MHz Takt
 	TCB0.CTRLA |= TCB_CLKSEL_CLKDIV2_gc;
 	// compare match value
-	TCB0.CCMP = 100;	// aktiviere Interrupt	TCB0.INTCTRL = TCB_CAPT_bm;
+	TCB0.CCMP = 100;	// aktiviere Interrupt	// TCB0.INTCTRL = TCB_CAPT_bm;
 	// starte Timer
 	TCB0.CTRLA |= TCB_ENABLE_bm;
 	// mit prescaler 2 ein increment alle 0.1uS bei einem 20MHz Takt
@@ -101,12 +100,37 @@ ISR (TCB0_INT_vect)
 }
 // ISR kommt auch alle 5uS nachdem Timer nach ADC match gestartet wurde
 ISR (TCB1_INT_vect)
-{	/*
-	TCB1.INTFLAGS = TCB_CAPT_bm;
+{
+	static uint16_t Timer_Kommutierung;
 	// Prüfe ob Winkel erreicht wurde
 	if (Kommutierung == Timer_Kommutierung)
-		Kommutiere = 1;
-	Timer_Kommutierung ++;*/
+	{
+		//Kommutiere = true;
+		Timer_Kommutierung = 0;
+		TCB1.CTRLA &= ~TCB_ENABLE_bm; // Stoppt Timer
+	}
+	Timer_Kommutierung ++;
+}
+
+
+/////////////////////////////////////////////////////////////////
+// Analog Comparator Interrupt 
+// Kommt wenn BEMF Spannung Mittelpunktspannung überschritten hat
+
+ISR(AC0_AC_vect)
+{	PORTA.OUTTGL = PIN4_bm;
+	
+	uint8_t tmp;		// braucht wenier Taktzyklen mit Zwischenspeicher
+	// gehe in nächste Phase über
+	tmp = BLDC_next_Phase(Phase);
+	BLDC_AC_set(tmp);
+	BLDC_change_Phase(tmp);
+	Phase = tmp;
+	
+	AC0.STATUS = AC_CMP_bm;		// Lösche Interrupt Flag
+	// starte Timer für K Winkels
+	// TCB1.CTRLA |= TCB_ENABLE_bm;
+	// Kommutiere = true; // Test mit Direktkommutierung 
 }
 
 
@@ -116,18 +140,24 @@ void Zwangskommutierung (void)
 {
 	uint16_t Drehzahl = 0xFFFF;
 	
-	uint8_t Mid_V = 0;
-	uint8_t BEMF_V = 0;
-	uint8_t match = 0;
+	//uint8_t Mid_V = 0;
+	//uint8_t BEMF_V = 0;
+	//uint8_t match = 0;
 	
 	uint16_t cnt = 0;
 	uint8_t PWM_full = 0;
 	
 	BLDC_PWM_Set (0);
 	Phase = BLDC_get_ready(Phase);	// Setzt alle Output Pins
+	_delay_ms(1);					// Warte bis Bemf geladen. Sonst kommt AC Interrupt sofort
+	BLDC_AC_set(Phase);				// Aktiviert AC und setzt ihn auf entsprechenden Input
+	AC0.STATUS = AC_CMP_bm;			// Setze Interrupt Flag zurück
+	AC0.INTCTRL = AC_CMP_bm;
+	
+	Kommutierung = 1;				// Setzt Winkelkommutierung auf 0°
 
 	// Anlaufen
-	while (Drehzahl  > 800)
+	while (0)//(Drehzahl  > 800)
 	{
 		if (cnt >= 1500)
 		{
@@ -149,8 +179,9 @@ void Zwangskommutierung (void)
 		if (Kommutiere)
 		{
 			// gehe in nächste Phase über
-			Phase = BLDC_next_Phase(Phase);
-			BLDC_change_Phase(Phase);
+			//Phase = BLDC_next_Phase(Phase);
+			//BLDC_change_Phase(Phase);
+			
 			
 			// Immer wenn alle 6 Phasen durch sind, aktualisiere Drehzahl
 			if (Phase == 1)
@@ -161,7 +192,7 @@ void Zwangskommutierung (void)
 			Kommutiere = false;
 		}
 	
-		// Messe und vergleiche BEMF mit Mittelpunktspannung
+		/*// Messe und vergleiche BEMF mit Mittelpunktspannung
 		Mid_V	=	ADC_read_Mid_V();
 		BEMF_V	=	ADC_read_BEMF_V(Phase);
 		match	=	BEMF_ADC_compare(Phase, Mid_V, BEMF_V);
@@ -170,7 +201,7 @@ void Zwangskommutierung (void)
 		{
 			Kommutiere = true;
 			match = 0;
-		}
+		}*/
 	}
 }
 
@@ -181,16 +212,16 @@ void normal_operation (void)
 {
 	uint16_t Drehzahl = 0xFFFF;		// Ist die Zeit in uS zwischen allen 6 Phasen
 	
-	uint8_t Mid_V = 0;
-	uint8_t BEMF_V = 0;
-	uint8_t match = 0;
+	//uint8_t Mid_V = 0;
+	//uint8_t BEMF_V = 0;
+	//uint8_t match = 0;
 	
 	// Kommutiere
 	if (Kommutiere)
 	{
-		// gehe in nächste Phase über
-		Phase = BLDC_next_Phase(Phase);
-		BLDC_change_Phase(Phase);
+		Kommutiere = false;
+
+		// BLDC_AC_set(Phase);
 			
 		// Immer wenn alle 6 Phasen durch sind, aktualisiere Drehzahl
 		if (Phase == 1)
@@ -201,27 +232,26 @@ void normal_operation (void)
 			Kommutierung = (Drehzahl*K_Winkel)/360;
 			
 		}
-		Kommutiere = false;
+		
 	}
 	
-	// Messe und vergleiche BEMF mit Mittelpunktspannung
+	/*// Messe und vergleiche BEMF mit Mittelpunktspannung
 	Mid_V	=	ADC_read_Mid_V();
 	BEMF_V	=	ADC_read_BEMF_V(Phase);
 	match	=	BEMF_ADC_compare(Phase, Mid_V, BEMF_V);
 
 	if (match)
-	{		Kommutiere = true;  // Test!!!!!! wenn Winkelkommutierung entfernt
-		// starte Timer
-		TCB1.CTRLA |= TCB_ENABLE_bm;
+	{		//Kommutiere = true;  // Test!!!!!! wenn Winkelkommutierung entfernt
+		Kommutiere = true;
 		match = 0;
-	}
+	}*/
 }
 
 
 /////////////////////////////////////////////////////////////////
 // main
 int main(void)
-{	
+{					PORTA.DIRSET = PIN4_bm;
 	bool Multishot = false;
 	bool dshot = false;
 	
@@ -255,7 +285,8 @@ int main(void)
 	BLDC_Stop();
 	BLDC_PWM_Init();
 	BLDC_C_Angle_init();
-	BEMF_ADC_init();
+	// BEMF_ADC_init();
+	BEMF_AC_init();
 	//SPI0_init_Client();
 	
 	BLDC_set_reverse(reverse_flag);
@@ -270,7 +301,7 @@ int main(void)
 		
 		if (Multishot)
 			PWM_Wert = Multishot_read() >> 2;	// Zwei nach rechts, da Wert von 0-2047 
-		if (dshot)								// zurückgegeben wird, aber er v0n 0-511 gehen muss
+		if (dshot)								// zurückgegeben wird, aber er von 0-511 gehen muss
 			PWM_Wert = dshot_read() >> 2;
 			
 		// Bei weniger als ~10% PWM stoppt der Motor
@@ -284,6 +315,7 @@ int main(void)
 			cnt_stop++;
 			if (cnt_stop >= 2000)
 			{
+				//AC0.INTCTRL &= ~AC_CMP_bm;
 				BLDC_Stop();
 				cnt_stop = 0;
 				run = false;
