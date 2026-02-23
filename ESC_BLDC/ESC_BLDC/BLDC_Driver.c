@@ -61,14 +61,14 @@ void BLDC_PWM_Set (uint16_t PWM_Wert)
 void BLDC_Driver_init (void)
 {
 	// Init Pins
-	Phase_Port.DIR	|=	INHA;
-	Phase_Port.DIR	|=	INLA;
-	Phase_Port.DIR	|=	INHB;
-	Phase_Port.DIR	|=	INLB;
-	Phase_Port.DIR	|=	INHC;
-	Phase_Port.DIR	|=	INLC;
+	Phase_Port.DIRSET	=	INHA;
+	Phase_Port.DIRSET	=	INLA;
+	Phase_Port.DIRSET	=	INHB;
+	Phase_Port.DIRSET	=	INLB;
+	Phase_Port.DIRSET	=	INHC;
+	Phase_Port.DIRSET	=	INLC;
 	
-	PWM_Port.DIR	|=	PWM;
+	PWM_Port.DIRSET		=	PWM;
 }
 
 // Phasen High / Low Side ein und ausschalten
