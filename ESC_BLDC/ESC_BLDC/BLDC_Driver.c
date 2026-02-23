@@ -72,32 +72,20 @@ void BLDC_Driver_init (void)
 }
 
 // Phasen High / Low Side ein und ausschalten
-void Phase_A_High_off (void)
-	{Phase_Port.DIR	|=	INHA;}
-void Phase_A_High_on (void)
-	{Phase_Port.DIR	&=	~INHA;}
-void Phase_A_Low_off (void)
-	{Phase_Port.OUT	&=	~INLA;}
-void Phase_A_Low_on (void)
-	{Phase_Port.OUT	|=	INLA;}
+static inline void Phase_A_High_off (void)	{Phase_Port.DIRSET	=	INHA;}
+static inline void Phase_A_High_on (void)	{Phase_Port.DIRCLR	=	INHA;}
+static inline void Phase_A_Low_off (void)	{Phase_Port.OUTCLR	=	INLA;}
+static inline void Phase_A_Low_on (void)	{Phase_Port.OUTSET	=	INLA;}
 
-void Phase_B_High_off (void)
-	{Phase_Port.DIR	|=	INHB;}
-void Phase_B_High_on (void)
-	{Phase_Port.DIR	&=	~INHB;}
-void Phase_B_Low_off (void)
-	{Phase_Port.OUT	&=	~INLB;}
-void Phase_B_Low_on (void)
-	{Phase_Port.OUT	|=	INLB;}
+static inline void Phase_B_High_off (void)	{Phase_Port.DIRSET	=	INHB;}
+static inline void Phase_B_High_on (void)	{Phase_Port.DIRCLR	=	INHB;}
+static inline void Phase_B_Low_off (void)	{Phase_Port.OUTCLR	=	INLB;}
+static inline void Phase_B_Low_on (void)	{Phase_Port.OUTSET	=	INLB;}
 	
-void Phase_C_High_off (void)
-	{Phase_Port.DIR	|=	INHC;}
-void Phase_C_High_on (void)
-	{Phase_Port.DIR	&=	~INHC;}
-void Phase_C_Low_off (void)
-	{Phase_Port.OUT	&=	~INLC;}
-void Phase_C_Low_on (void)
-	{Phase_Port.OUT	|=	INLC;}
+static inline void Phase_C_High_off (void)	{Phase_Port.DIRSET	=	INHC;}
+static inline void Phase_C_High_on (void)	{Phase_Port.DIRCLR	=	INHC;}
+static inline void Phase_C_Low_off (void)	{Phase_Port.OUTCLR	=	INLC;}
+static inline void Phase_C_Low_on (void)	{Phase_Port.OUTSET	=	INLC;}
 	
 void BLDC_Stop (void)
 {
