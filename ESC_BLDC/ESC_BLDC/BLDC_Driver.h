@@ -49,19 +49,19 @@ void BLDC_change_Phase (uint8_t Phase);
 /////////////////////////////////////////////////////////////////
 // Motor_BEMF
 
-#define ADC_POS_MID		ADC_MUXPOS_AIN0_gc
-#define ADC_POS_BEMF_A	ADC_MUXPOS_AIN3_gc
+#define ADC_POS_MID		ADC_MUXPOS_AIN5_gc
+#define ADC_POS_BEMF_A	ADC_MUXPOS_AIN4_gc
 #define ADC_POS_BEMF_B	ADC_MUXPOS_AIN2_gc
 #define ADC_POS_BEMF_C	ADC_MUXPOS_AIN1_gc
 
 #define BEMF_Port		PORTD
-#define BEMF_Mid		PIN0_bm
-#define BEMF_A			PIN3_bm
+#define BEMF_Mid		PIN5_bm
+#define BEMF_A			PIN4_bm
 #define BEMF_B			PIN2_bm
 #define BEMF_C			PIN1_bm
 
-#define BEMF_Mid_PCTRL	PIN0CTRL
-#define BEMF_A_PCTRL	PIN3CTRL
+#define BEMF_Mid_PCTRL	PIN5CTRL
+#define BEMF_A_PCTRL	PIN4CTRL
 #define BEMF_B_PCTRL	PIN2CTRL
 #define BEMF_C_PCTRL	PIN1CTRL
 
@@ -86,11 +86,14 @@ void BLDC_change_Phase (uint8_t Phase);
 #define BEMF_C_POS_AC		AC_MUXPOS_PIN3_gc
 
 
+
 /////////////////////////////////////////////////////////////////
 
 void BEMF_AC_init (void);
 
 void BLDC_AC_set(uint8_t Phase);
+
+//void BLDC_AC_ignore(uint8_t Phase);
 
 
 void BEMF_ADC_init (void);

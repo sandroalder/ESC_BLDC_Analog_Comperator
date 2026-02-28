@@ -145,7 +145,7 @@ void BLDC_change_Phase (uint8_t Phase)
 			else
 			{
 				Phase_A_High_on();
-				Phase_B_High_off();
+				Phase_B_High_off();	
 			}
 			break;
 		}
@@ -159,7 +159,7 @@ void BLDC_change_Phase (uint8_t Phase)
 			else
 			{
 				Phase_B_Low_on();
-				Phase_C_Low_off();
+				Phase_C_Low_off();	
 			}
 			break;
 		}
@@ -168,12 +168,12 @@ void BLDC_change_Phase (uint8_t Phase)
 			if (reverse == 0)
 			{
 				Phase_B_High_on();
-				Phase_A_High_off();
+				Phase_A_High_off();	
 			}
 			else
 			{
 				Phase_C_High_on();
-				Phase_A_High_off();
+				Phase_A_High_off();	
 			}
 			break;
 		}
@@ -181,13 +181,13 @@ void BLDC_change_Phase (uint8_t Phase)
 		{
 			if (reverse == 0)
 			{
-				Phase_C_Low_off();
-				Phase_A_Low_on();
+				Phase_A_Low_on();	
+				Phase_C_Low_off();		
 			}
 			else
 			{
-				Phase_B_Low_off();
 				Phase_A_Low_on();
+				Phase_B_Low_off();	
 			}
 			break;
 		}
@@ -196,7 +196,7 @@ void BLDC_change_Phase (uint8_t Phase)
 			if (reverse == 0)
 			{
 				Phase_C_High_on();
-				Phase_B_High_off();
+				Phase_B_High_off();	
 			}
 			else
 			{
@@ -210,7 +210,7 @@ void BLDC_change_Phase (uint8_t Phase)
 			if (reverse == 0)
 			{
 				Phase_B_Low_on();
-				Phase_A_Low_off();
+				Phase_A_Low_off();	
 			}
 			else
 			{
@@ -269,11 +269,11 @@ void BEMF_AC_init (void)
 	BEMF_Port_AC.BEMF_C_AC_PCTRL	&= ~PORT_ISC_gm;
 	BEMF_Port_AC.BEMF_C_AC_PCTRL	|= PORT_ISC_INPUT_DISABLE_gc;
 	
+	
 	AC0.MUXCTRLA = BEMF_NEG_AC;			// setze Mid_V auf negativen Input
-	AC0.CTRLA |= AC_HYSMODE_10mV_gc;	// Hysterese
 
-	// Aktiviere AC und setze ihn auf beide Flanken
-	AC0.CTRLA = AC_ENABLE_bm | AC_INTMODE_BOTHEDGE_gc;
+	// Aktiviere AC und setze ihn auf beide Flanken / Hysterese 10mV
+	AC0.CTRLA = AC_ENABLE_bm | AC_INTMODE_BOTHEDGE_gc | AC_HYSMODE_10mV_gc;
 }
 
 void BLDC_AC_set(uint8_t Phase)
@@ -286,7 +286,7 @@ void BLDC_AC_set(uint8_t Phase)
 				AC0.MUXCTRLA = BEMF_C_POS_AC | BEMF_NEG_AC;
 			else
 				AC0.MUXCTRLA = BEMF_B_POS_AC | BEMF_NEG_AC;
-			break;
+		break;
 		}
 		case 2:
 		{
@@ -294,12 +294,12 @@ void BLDC_AC_set(uint8_t Phase)
 				AC0.MUXCTRLA = BEMF_B_POS_AC | BEMF_NEG_AC;
 			else
 				AC0.MUXCTRLA = BEMF_C_POS_AC | BEMF_NEG_AC;
-			break;
+		break;
 		}
 		case 3:
 		{
-				AC0.MUXCTRLA = BEMF_A_POS_AC | BEMF_NEG_AC;
-			break;
+			AC0.MUXCTRLA = BEMF_A_POS_AC | BEMF_NEG_AC;
+		break;
 		}
 		case 4:
 		{
@@ -307,7 +307,7 @@ void BLDC_AC_set(uint8_t Phase)
 				AC0.MUXCTRLA = BEMF_C_POS_AC | BEMF_NEG_AC;
 			else
 				AC0.MUXCTRLA = BEMF_B_POS_AC | BEMF_NEG_AC;
-			break;
+		break;
 		}
 		case 5:
 		{
@@ -315,7 +315,7 @@ void BLDC_AC_set(uint8_t Phase)
 				AC0.MUXCTRLA = BEMF_B_POS_AC | BEMF_NEG_AC;
 			else
 				AC0.MUXCTRLA = BEMF_C_POS_AC | BEMF_NEG_AC;
-			break;
+		break;
 		}
 		case 6:
 		{
@@ -323,9 +323,9 @@ void BLDC_AC_set(uint8_t Phase)
 		break;
 		}
 	}
-	//AC0.INTCTRL = AC_CMP_bm; // Aktiviere Interrupt
 	return;
 }
+
 
 
 //  ADC Wert einlesen und filtern

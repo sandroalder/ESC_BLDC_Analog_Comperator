@@ -23,8 +23,8 @@
 #define	TCBx_vect	TCB2_INT_vect
 #define USERTCBx	USERTCB2						// Timer counterB2
 
-#define CHANNELx	EVSYS.CHANNEL0					// Channel 0
-#define EV_CHANNEL	EVSYS_CHANNEL_CHANNEL0_gc		// Channel 0
+#define CHANNELx	EVSYS.CHANNEL1					// Channel 1
+#define EV_CHANNEL	EVSYS_CHANNEL_CHANNEL1_gc		// Channel 1
 
 #define PORTx_PINx	EVSYS_GENERATOR_PORT0_PIN7_gc	// PortA Pin7
 //#define PORTx_PINx	EVSYS_GENERATOR_PORT1_PIN2_gc	// PortB Pin2
