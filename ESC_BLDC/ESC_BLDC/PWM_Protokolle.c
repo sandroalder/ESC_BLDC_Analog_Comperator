@@ -62,17 +62,15 @@ uint16_t Multishot_read (void)
 {
     uint32_t tmp;
 
-    cli();
     tmp = TCBx.CCMP;
-    sei();
 
     if (tmp > zero_pos)
 		tmp -= zero_pos;
     else
 		tmp = 0;
 
-    //tmp *= (float)scaling_5;
-	tmp = (tmp * scaling_5_Zaehler) scaling_Nenner;		// shift >> 8 statt Bruch
+    //tmp *= (float)scaling_5;		// shift >> 8 statt Bruch
+	tmp = (tmp * scaling_5_Zaehler) scaling_Nenner;
 	
     if (tmp > 2047)
 		tmp = 2047;

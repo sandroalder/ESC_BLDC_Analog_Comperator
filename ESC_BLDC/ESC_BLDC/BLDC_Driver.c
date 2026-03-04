@@ -37,7 +37,7 @@ void BLDC_PWM_Init (void)
 		
 	/* Non Split mode */
 	// select prescaler
-	// mit prescaler 2 ein increment alle 0.05uS bei einem 20MHz Takt
+	// Ohne prescaler ein increment alle 0.05uS bei einem 20MHz Takt
 	TCA0.SINGLE.CTRLA |= TCA_SINGLE_CLKSEL_DIV1_gc;
 	
 	TCA0.SINGLE.CTRLB |= TCA_SINGLE_WGMODE_SINGLESLOPE_gc;

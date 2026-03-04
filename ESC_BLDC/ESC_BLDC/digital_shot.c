@@ -50,8 +50,8 @@ ISR(TCBx_vect)
 	static  uint16_t	d_shot_buff = 0;	// static sorgt dafür, dass der Wert erhalten bleibt
 	static  uint8_t		d_shot_cnt = 0;
 	
-	uint16_t tmp_CCMP = TCBx.CCMP;			// Zugriffe auf TCBx.CCMP dauern länger. Den Wert zwischenzuspeichern optimiert die Laufzeit
-	
+	uint16_t tmp_CCMP = TCBx.CCMP;			// Zugriffe auf TCBx.CCMP dauern länger
+											// Den Wert zwischenzuspeichern optimiert die Laufzeit
 	d_shot_buff <<= 1;
 	if (tmp_CCMP < Bit_Mitte)
 	d_shot_buff++;
@@ -72,11 +72,11 @@ uint16_t dshot_read (void)
 	
 	uint16_t frame;
 	uint16_t data;
-	cli();							//blockt Interrupt solange ISR schreibt
+	cli();							//blockt Interrupt solange Wert ausgelesen wird
 	frame = d_shot_crc << 1;
 	sei();
 		data = frame >> 4;			// 12 Bit: throttle + telemetry
-		// Überprüfe CRC => Verwerfe letztes Bit da DShot ultrascheisse ist
+		// Überprüfe Checksumme => Verwerfe letztes Bit, da DShot ultrascheisse ist
 		// und Dieser Timer nicht dafür geeignet
 		if ((frame & 0x0E) == ((data ^ (data >> 4) ^ (data >> 8)) & 0x0E))
 		{
