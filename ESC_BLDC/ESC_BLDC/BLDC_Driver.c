@@ -259,6 +259,10 @@ void BEMF_AC_init (void)
 	PORTD.PIN0CTRL &= ~PORT_ISC_gm;
 	PORTD.PIN0CTRL |= PORT_ISC_INPUT_DISABLE_gc;
 	
+	// Missbrauche hier Pin für den AC ignore
+	PORTD.PIN6CTRL |= PORT_PULLUPEN_bm;
+	PORTD.PIN7CTRL |= PORT_PULLUPEN_bm;
+	
 	// Schalte digitale Input Buffer aus
 	BEMF_Port_AC.BEMF_Mid_AC_PCTRL	&= ~PORT_ISC_gm;
 	BEMF_Port_AC.BEMF_Mid_AC_PCTRL	|= PORT_ISC_INPUT_DISABLE_gc;
@@ -274,6 +278,12 @@ void BEMF_AC_init (void)
 
 	// Aktiviere AC und setze ihn auf beide Flanken / Hysterese 10mV
 	AC0.CTRLA = AC_ENABLE_bm | AC_INTMODE_BOTHEDGE_gc | AC_HYSMODE_10mV_gc;
+	//AC0.INTCTRL = AC_CMP_bm;
+}
+
+void BLDC_AC_ignore(void)
+{
+	AC0.MUXCTRLA = ignore_NEG | ignore_POS;
 }
 
 void BLDC_AC_set(uint8_t Phase)

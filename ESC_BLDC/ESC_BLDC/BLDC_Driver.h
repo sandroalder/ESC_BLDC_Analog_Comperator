@@ -85,15 +85,18 @@ void BLDC_change_Phase (uint8_t Phase);
 #define BEMF_B_POS_AC		AC_MUXPOS_PIN0_gc
 #define BEMF_C_POS_AC		AC_MUXPOS_PIN3_gc
 
+#define ignore_NEG			AC_MUXNEG_PIN2_gc // Pin mit Pullup, um den AC zu ignorieren
+#define ignore_POS			AC_MUXPOS_PIN2_gc
 
 
 /////////////////////////////////////////////////////////////////
 
 void BEMF_AC_init (void);
 
+void BLDC_AC_ignore(void);
+
 void BLDC_AC_set(uint8_t Phase);
 
-//void BLDC_AC_ignore(uint8_t Phase);
 
 
 void BEMF_ADC_init (void);

@@ -19,9 +19,9 @@
 // mit prescaler 1 ein increment alle 0.05uS bei einem 20MHz Takt / max. Pulse 3’276.8uS
 #define CLK_select	TCB_CLKSEL_CLKDIV1_gc			// für d_shot150
 
-#define TCBx		TCB2							// Timer counterB2
-#define	TCBx_vect	TCB2_INT_vect
-#define USERTCBx	USERTCB2						// Timer counterB2
+#define TCBx		TCB3							// Timer counterB3
+#define	TCBx_vect	TCB3_INT_vect
+#define USERTCBx	USERTCB3						// Timer counterB3
 
 #define CHANNELx	EVSYS.CHANNEL1					// Channel 1
 #define EV_CHANNEL	EVSYS_CHANNEL_CHANNEL1_gc		// Channel 1
