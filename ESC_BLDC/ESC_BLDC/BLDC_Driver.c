@@ -136,7 +136,6 @@ void BLDC_change_Phase (uint8_t Phase)
 	switch (Phase)
 	{
 		case 1:
-		{
 			if (reverse == 0)
 			{
 				Phase_A_High_on();
@@ -147,10 +146,8 @@ void BLDC_change_Phase (uint8_t Phase)
 				Phase_A_High_on();
 				Phase_B_High_off();	
 			}
-			break;
-		}
+		break;
 		case 2:
-		{
 			if (reverse == 0)
 			{
 				Phase_C_Low_on();
@@ -161,10 +158,8 @@ void BLDC_change_Phase (uint8_t Phase)
 				Phase_B_Low_on();
 				Phase_C_Low_off();	
 			}
-			break;
-		}
+		break;
 		case 3:
-		{
 			if (reverse == 0)
 			{
 				Phase_B_High_on();
@@ -175,10 +170,8 @@ void BLDC_change_Phase (uint8_t Phase)
 				Phase_C_High_on();
 				Phase_A_High_off();	
 			}
-			break;
-		}
+		break;
 		case 4:
-		{
 			if (reverse == 0)
 			{
 				Phase_A_Low_on();	
@@ -189,10 +182,8 @@ void BLDC_change_Phase (uint8_t Phase)
 				Phase_A_Low_on();
 				Phase_B_Low_off();	
 			}
-			break;
-		}
+		break;
 		case 5:
-		{
 			if (reverse == 0)
 			{
 				Phase_C_High_on();
@@ -203,10 +194,8 @@ void BLDC_change_Phase (uint8_t Phase)
 				Phase_B_High_on();
 				Phase_C_High_off();
 			}
-			break;
-		}
+		break;
 		case 6:
-		{
 			if (reverse == 0)
 			{
 				Phase_B_Low_on();
@@ -217,8 +206,7 @@ void BLDC_change_Phase (uint8_t Phase)
 				Phase_C_Low_on();
 				Phase_A_Low_off();
 			}
-			break;
-		}
+		break;
 	}
 }
 
@@ -259,10 +247,6 @@ void BEMF_AC_init (void)
 	PORTD.PIN0CTRL &= ~PORT_ISC_gm;
 	PORTD.PIN0CTRL |= PORT_ISC_INPUT_DISABLE_gc;
 	
-	// Missbrauche hier Pin für den AC ignore
-	PORTD.PIN6CTRL |= PORT_PULLUPEN_bm;
-	PORTD.PIN7CTRL |= PORT_PULLUPEN_bm;
-	
 	// Schalte digitale Input Buffer aus
 	BEMF_Port_AC.BEMF_Mid_AC_PCTRL	&= ~PORT_ISC_gm;
 	BEMF_Port_AC.BEMF_Mid_AC_PCTRL	|= PORT_ISC_INPUT_DISABLE_gc;
@@ -291,49 +275,36 @@ void BLDC_AC_set(uint8_t Phase)
 	switch (Phase)
 	{
 		case 1:
-		{
 			if (reverse == 0)
 				AC0.MUXCTRLA = BEMF_C_POS_AC | BEMF_NEG_AC;
 			else
 				AC0.MUXCTRLA = BEMF_B_POS_AC | BEMF_NEG_AC;
 		break;
-		}
 		case 2:
-		{
 			if (reverse == 0)
 				AC0.MUXCTRLA = BEMF_B_POS_AC | BEMF_NEG_AC;
 			else
 				AC0.MUXCTRLA = BEMF_C_POS_AC | BEMF_NEG_AC;
 		break;
-		}
 		case 3:
-		{
 			AC0.MUXCTRLA = BEMF_A_POS_AC | BEMF_NEG_AC;
 		break;
-		}
 		case 4:
-		{
 			if (reverse == 0)
 				AC0.MUXCTRLA = BEMF_C_POS_AC | BEMF_NEG_AC;
 			else
 				AC0.MUXCTRLA = BEMF_B_POS_AC | BEMF_NEG_AC;
 		break;
-		}
 		case 5:
-		{
 			if (reverse == 0)
 				AC0.MUXCTRLA = BEMF_B_POS_AC | BEMF_NEG_AC;
 			else
 				AC0.MUXCTRLA = BEMF_C_POS_AC | BEMF_NEG_AC;
 		break;
-		}
 		case 6:
-		{
 			AC0.MUXCTRLA = BEMF_A_POS_AC | BEMF_NEG_AC;
 		break;
-		}
 	}
-	return;
 }
 
 
@@ -371,47 +342,35 @@ uint8_t ADC_read_BEMF_V (uint8_t Phase)
 	switch (Phase)
 	{
 		case 1:
-		{
 			if (reverse == 0)
 				ADC0.MUXPOS = ADC_POS_BEMF_C;
 			else
 				ADC0.MUXPOS = ADC_POS_BEMF_B;			
-			break;
-		}
+		break;
 		case 2:
-		{
 			if (reverse == 0)
 				ADC0.MUXPOS = ADC_POS_BEMF_B;
 			else
 				ADC0.MUXPOS = ADC_POS_BEMF_C;
-			break;
-		}
+		break;
 		case 3:
-		{
 			ADC0.MUXPOS = ADC_POS_BEMF_A;
-			break;
-		}
+		break;
 		case 4:
-		{
 			if (reverse == 0)
 				ADC0.MUXPOS = ADC_POS_BEMF_C;
 			else
 				ADC0.MUXPOS = ADC_POS_BEMF_B;
-			break;
-		}
+		break;
 		case 5:
-		{
 			if (reverse == 0)
 				ADC0.MUXPOS = ADC_POS_BEMF_B;
 			else
 				ADC0.MUXPOS = ADC_POS_BEMF_C;
-			break;
-		}
+		break;
 		case 6:
-		{
 			ADC0.MUXPOS = ADC_POS_BEMF_A;
-			break;
-		}
+		break;
 	}
 	BEMF_V = ADC_read_and_filter();
 	return BEMF_V;

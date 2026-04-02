@@ -45,10 +45,6 @@
 #define	F_CPU 20000000UL
 #include <util/delay.h>
 
-// extern "C" wird benötigt für die Einbindung von c files in ein c++ file
-//extern "C" 
-//{	
-//}
 
 #include "System_Init.h"
 #include "BLDC_Driver.h"
@@ -56,6 +52,7 @@
 #include "digital_shot.h"
 #include "moving_avarage_filter.h"
 //#include "SPI.h"
+
 
 
 //////////////////////////////////////////////////////////////
@@ -66,7 +63,15 @@
 
 // Kommutierungswinkel in Grad eintragen
 //volatile uint8_t K_Winkel = 10;//25;
-#define K_Winkel	20
+#define K_Winkel	30
+// Zeit in zehnteluS, die gebraucht wird um die Phasen umzuschalten
+#define T_Konst		100
+// max Zeit für die Winkelkommutierung in zehnteluS
+#define max_Time	5000
+// Es wird eine min. Zeit benötigt, damit es funktioniert in zehnteluS
+#define min_Time	80
+// Start Zeit für Zwangskommutierung
+#define start_Time	50
 
 // Reverse Flag
 volatile uint8_t reverse_flag = 0;
@@ -115,10 +120,10 @@ void LUT_enable(void)
 					| 1 << CCL_ENABLE_bp		/* LUT Enable: enabled */
 					| 0 << CCL_OUTEN_bp;		/* Output Enable: disabled */
 
-	CCL.INTCTRL0 = CCL_INTMODE0_BOTH_gc;	// Interrupt on both Edges
+	CCL.INTCTRL0 = CCL_INTMODE0_BOTH_gc;		// Interrupt on both Edges
 
-	CCL.CTRLA		= 1 << CCL_ENABLE_bp		/* Enable: enabled */
-					| 0 << CCL_RUNSTDBY_bp;		/* Run in Standby: disabled */
+	//CCL.CTRLA		= 1 << CCL_ENABLE_bp		/* Enable: enabled */
+	//				| 0 << CCL_RUNSTDBY_bp;		/* Run in Standby: disabled */
 }
 
 void BLDC_C_Angle_init (void)
@@ -131,12 +136,12 @@ void BLDC_C_Angle_init (void)
 
 	//EVSYS.CHANNEL2 = EVSYS_GENERATOR_AC0_OUT_gc;
 	EVSYS.CHANNEL2 = EVSYS_GENERATOR_CCL_LUT0_gc;
-	EVSYS.USERTCB0 = EVSYS_CHANNEL_CHANNEL2_gc;
 	EVSYS.USERTCB1 = EVSYS_CHANNEL_CHANNEL2_gc;
+	EVSYS.USERTCB0 = EVSYS_CHANNEL_CHANNEL3_gc;
 
 	TCB0.CTRLB |= TCB_CNTMODE_FRQ_gc;
 	TCB0.EVCTRL |= TCB_CAPTEI_bm;
-	TCB0.EVCTRL |= TCB_EDGE_bm;
+	TCB0.EVCTRL &= ~TCB_EDGE_bm;
 	//TCB0.INTCTRL = TCB_CAPT_bm;
 	TCB0.CTRLA |= TCB_ENABLE_bm;
 	
@@ -166,25 +171,54 @@ void AC_Ignore_init (void)
 }
 
 
-ISR (TCB1_INT_vect)
+volatile bool rechne = false;
+volatile uint16_t Time_Delay = min_Time;
+void berechne_K_Winkel(void)
 {
-											PORTA.OUTSET = PIN4_bm;
+	uint16_t Drehzahl;
+	uint16_t tmp;
+	
+	if (rechne)
+	{												
+		rechne = false;
+		Drehzahl = Moving_Avarage_Filter_16Bit_1(TCB0.CCMP);
+
+		tmp = ((uint32_t)Drehzahl * K_Winkel) / 60;
+	
+		if (tmp > T_Konst)
+			tmp -= T_Konst;
+		if (tmp < min_Time)
+			tmp = min_Time;
+		if (tmp > max_Time)
+			tmp = max_Time;
+			
+		cli();
+		Time_Delay = tmp;
+		sei();
+	}
+}
+
+
+ISR (TCB1_INT_vect)
+{									
 	uint8_t tmp;
 
 	tmp = BLDC_next_Phase(Phase);
 	BLDC_AC_set(tmp);
 	BLDC_change_Phase(tmp);
 	Phase = tmp;
-	_delay_us(1);
 	
+	rechne = true;
+	
+	//_delay_us(1);
 	
 	TCB1.CNT = TCB1.CCMP;
-	TCB1.INTFLAGS = TCB_CAPT_bm;			
+	TCB1.INTFLAGS = TCB_CAPT_bm;												PORTA.OUTCLR = PIN4_bm;
 }
 
 ISR (TCB2_INT_vect)
 {
-	TCB2.INTFLAGS = TCB_CAPT_bm;			PORTA.OUTCLR = PIN4_bm;
+	TCB2.INTFLAGS = TCB_CAPT_bm;
 }
 
 
@@ -198,44 +232,48 @@ ISR(AC0_AC_vect)
 }
 
 ISR(CCL_CCL_vect)
-{
+{												PORTA.OUTSET = PIN4_bm;
 	BLDC_AC_set(BLDC_next_Phase(Phase));
+	TCB1.CCMP = Time_Delay;
 	CCL.INTFLAGS = CCL_INT0_bm;		// Lösche Interrupt Flag
 }
-
 
 /////////////////////////////////////////////////////////////////
 // Zwangskommutierung	
 void Zwangskommutierung (void)
 {
-	//uint16_t Drehzahl = 0xFFFF;
 
-	//uint16_t cnt = 0;
-	//uint8_t PWM_full = 0;
-	
-	uint8_t Mid_V = 0;
-	uint8_t Bemf_V = 0;
+	//uint8_t Mid_V = 0;
+	//uint8_t Bemf_V = 0;
 	
 	BLDC_PWM_Set (0);
-		
+	Moving_Avarage_Filter_16Bit_1_preset(start_Time); // Startwert
+	TCB1.CCMP = start_Time;
+	Time_Delay = start_Time;
+	
 	Phase = 1;
 	Phase = BLDC_get_ready(Phase);	// Setzt alle Output Pins
 	BLDC_change_Phase(Phase);
 	_delay_ms(1);
 
 	// Anlaufen
-								//BLDC_PWM_Set(350);
-	_delay_ms(20);
+	BLDC_PWM_Set(100);
+	_delay_ms(200);
+	BLDC_PWM_Set(250);
 	
 	//Mid_V	=	ADC_read_BEMF_V(3); // Messe hier Phase A und bilde Mid_V ab
 	
-	Phase = BLDC_next_Phase(Phase);
-	BLDC_change_Phase(Phase);
-	
-	_delay_ms(2);
-	
-	Phase = BLDC_next_Phase(Phase);
-	BLDC_change_Phase(Phase);
+	uint16_t wait = 6000;
+	for (uint16_t i = 0; i < 160; i++)
+	{
+		Phase = BLDC_next_Phase(Phase);
+		BLDC_change_Phase(Phase);
+		for (uint16_t t = 0; t < wait; t++)
+		{
+			_delay_us(1);
+		}
+		wait -= 35; 
+	}
 	
 	//while (BEMF_ADC_compare (Phase, Mid_V, ADC_read_BEMF_V(Phase))) {}
 	
@@ -252,11 +290,10 @@ void Zwangskommutierung (void)
 	}*/
 	
 	// Aktiviert AC und setzt ihn auf entsprechenden Input
-	AC0.STATUS = AC_CMP_bm;			// Setze Interrupt Flag zurück
-	AC0.INTCTRL = AC_CMP_bm;
 	BLDC_AC_set(Phase);
-	AC0.CTRLA |= AC_ENABLE_bm;
-	_delay_ms(250);
+	CCL.CTRLA = 1 << CCL_ENABLE_bp;
+
+	_delay_ms(400);
 }
 
 
@@ -264,24 +301,15 @@ void Zwangskommutierung (void)
 // normal operation
 void normal_operation (void)
 {
-	//if(AC_rdy)
-		//AC0.CTRLA |= AC_ENABLE_bm;
-	/*
-	// Kommutiere
-	if (Kommutiere)
-	{
-		uint8_t tmp;		// braucht weniger Taktzyklen mit Zwischenspeicher
-		
-		Kommutiere = false;
-		_delay_us(1);
-	}*/
+	berechne_K_Winkel();
+	_delay_us(10);
 }
 
 
 /////////////////////////////////////////////////////////////////
 // main
 int main(void)
-{					PORTA.DIRSET = PIN4_bm; /*PORTA.DIRSET = PIN3_bm;*/ PORTMUX.CCLROUTEA = PORTMUX_LUT0_bm; TCB1.CCMP = 500; //TCB2.CCMP = 800;
+{					PORTA.DIRSET = PIN4_bm; PORTMUX.CCLROUTEA = PORTMUX_LUT0_bm;
 	bool Multishot = false;
 	bool dshot = false;
 	
@@ -347,10 +375,8 @@ int main(void)
 			cnt_stop++;
 			if (cnt_stop >= 2000)
 			{
+				CCL.CTRLA = 0 << CCL_ENABLE_bp;
 				BLDC_Stop();
-				AC0.INTCTRL &= ~AC_CMP_bm;
-				AC0.CTRLA &= ~AC_ENABLE_bm;
-				AC0.STATUS = AC_CMP_bm;	
 				
 				cnt_stop = 0;
 				run = false;
