@@ -213,6 +213,84 @@ void BLDC_change_Phase (uint8_t Phase)
 /////////////////////////////////////////////////////////////////
 // Motor_BEMF
 
+// Lut wird gebraucht um AC zu nach Kommutierung zu Ignorieren
+void LUT_enable(void)
+{
+	CCL.SEQCTRL0	= CCL_SEQSEL0_DFF_gc        /* D FlipFlop */
+	| CCL_SEQSEL1_DISABLE_gc;	/* Sequential logic disabled */
+
+	CCL.TRUTH0 = 2;
+
+	CCL.LUT0CTRLB	= CCL_INSEL0_AC0_gc			/* AC0 OUT input source */
+	| CCL_INSEL1_MASK_gc;		/* Masked input */
+
+	CCL.LUT0CTRLA	= CCL_CLKSRC_CLKPER_gc		/* CLK_PER is clocking the LUT */
+	| CCL_EDGEDET_DIS_gc		/* Edge detector is disabled */
+	| CCL_FILTSEL_FILTER_gc		/* Filter disabled */
+	| 1 << CCL_ENABLE_bp		/* LUT Enable: enabled */
+	| 1 << CCL_OUTEN_bp;		/* Output Enable: enabled */
+
+	CCL.TRUTH1 = 1;
+
+	CCL.LUT1CTRLC	= CCL_INSEL2_TCB2_gc;		/* TCB2 WO input source */
+
+	CCL.LUT1CTRLA	=	CCL_CLKSRC_CLKPER_gc    /* CLK_PER is clocking the LUT */
+	| CCL_EDGEDET_DIS_gc		/* Edge detector is disabled */
+	| CCL_FILTSEL_DISABLE_gc	/* Filter disabled */
+	| 1 << CCL_ENABLE_bp		/* LUT Enable: enabled */
+	| 0 << CCL_OUTEN_bp;		/* Output Enable: disabled */
+
+	CCL.INTCTRL0 = CCL_INTMODE0_BOTH_gc;		// Interrupt on both Edges
+
+	//CCL.CTRLA		= 1 << CCL_ENABLE_bp		/* Enable: enabled */
+	//				| 0 << CCL_RUNSTDBY_bp;		/* Run in Standby: disabled */
+}
+
+void BLDC_C_Angle_init (void)
+{
+	//ein increment alle 0.1uS bei einem 20MHz Takt
+	TCB0.CTRLA |= TCB_CLKSEL_CLKDIV2_gc;
+	TCB1.CTRLA |= TCB_CLKSEL_CLKDIV2_gc;
+	
+	LUT_enable();
+
+	//EVSYS.CHANNEL2 = EVSYS_GENERATOR_AC0_OUT_gc;
+	EVSYS.CHANNEL2 = EVSYS_GENERATOR_CCL_LUT0_gc;
+	EVSYS.USERTCB1 = EVSYS_CHANNEL_CHANNEL2_gc;
+	EVSYS.USERTCB0 = EVSYS_CHANNEL_CHANNEL3_gc;
+
+	TCB0.CTRLB |= TCB_CNTMODE_FRQ_gc;
+	TCB0.EVCTRL |= TCB_CAPTEI_bm;
+	TCB0.EVCTRL &= ~TCB_EDGE_bm;
+	//TCB0.INTCTRL = TCB_CAPT_bm;
+	TCB0.CTRLA |= TCB_ENABLE_bm;
+	
+	// Single shot mode
+	TCB1.CTRLB |= TCB_CNTMODE_SINGLE_gc;
+	TCB1.EVCTRL |= TCB_CAPTEI_bm;
+	TCB1.EVCTRL |= TCB_EDGE_bm;
+	TCB1.INTCTRL |= TCB_CAPT_bm;
+	TCB1.CTRLA |= TCB_ENABLE_bm;
+}
+
+void AC_Ignore_init (void)
+{
+	EVSYS.CHANNEL3 = EVSYS_GENERATOR_TCB1_CAPT_gc;
+	EVSYS.USERTCB2 = EVSYS_CHANNEL_CHANNEL3_gc;
+	//EVSYS.USERTCB2 = EVSYS_CHANNEL_CHANNEL2_gc;
+	
+	TCB2.CCMP = AC_Ignore_uS;
+	TCB2.CTRLA |= TCB_CLKSEL_CLKDIV2_gc;
+	
+	// Single shot mode
+	TCB2.CTRLB |= TCB_CNTMODE_SINGLE_gc;
+	TCB2.EVCTRL |= TCB_CAPTEI_bm;
+	TCB2.EVCTRL |= TCB_EDGE_bm;
+	TCB2.INTCTRL |= TCB_CAPT_bm;
+	TCB2.CTRLA |= TCB_ENABLE_bm;
+}
+
+
 
 void BEMF_ADC_init (void)
 {
@@ -265,10 +343,6 @@ void BEMF_AC_init (void)
 	//AC0.INTCTRL = AC_CMP_bm;
 }
 
-void BLDC_AC_ignore(void)
-{
-	AC0.MUXCTRLA = ignore_NEG | ignore_POS;
-}
 
 void BLDC_AC_set(uint8_t Phase)
 {

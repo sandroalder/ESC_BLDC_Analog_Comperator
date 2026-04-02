@@ -85,21 +85,22 @@ void BLDC_change_Phase (uint8_t Phase);
 #define BEMF_B_POS_AC		AC_MUXPOS_PIN0_gc
 #define BEMF_C_POS_AC		AC_MUXPOS_PIN3_gc
 
-#define ignore_NEG			AC_MUXNEG_PIN2_gc // Pin mit Pullup, um den AC zu ignorieren
-#define ignore_POS			AC_MUXPOS_PIN2_gc
 
+// Zeit eintragen, die der Analog Komparator nach dem Kommutieren ausgeschaltet sein soll in zehntel uS
+#define AC_Ignore_uS	300
 
 /////////////////////////////////////////////////////////////////
 
 void BEMF_AC_init (void);
 
-void BLDC_AC_ignore(void);
+void BEMF_ADC_init (void);
+
+void BLDC_C_Angle_init (void);
+
+void AC_Ignore_init (void);
 
 void BLDC_AC_set(uint8_t Phase);
 
-
-
-void BEMF_ADC_init (void);
 
 uint8_t ADC_read_Mid_V (void);
 

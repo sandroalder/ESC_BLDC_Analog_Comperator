@@ -58,9 +58,6 @@
 //////////////////////////////////////////////////////////////
 // Parameter
 
-// Zeit eintragen, die der Analog Komparator nach dem Kommutieren ausgeschaltet sein soll in zehntel uS
-#define AC_Ignore_uS	300
-
 // Kommutierungswinkel in Grad eintragen
 //volatile uint8_t K_Winkel = 10;//25;
 #define K_Winkel	30
@@ -73,103 +70,19 @@
 // Start Zeit für Zwangskommutierung
 #define start_Time	50
 
-// Reverse Flag
-volatile uint8_t reverse_flag = 0;
-
 
 //////////////////////////////////////////////////////////////
 // globale variable / wird in Interrupt Routine gebraucht
 // volatile sollte verwendet werden, wenn variable in Interrupt Routine verwendet wird
-volatile uint16_t Timer_Drehzahl = 0xFFFF;
-volatile uint16_t Kommutierung = 0;
+
+// Reverse Flag
+volatile uint8_t reverse_flag = 0;
 
 volatile uint8_t Phase = 1;
-volatile bool Kommutiere = false;
-volatile bool AC_ignore = false;
+
 
 /////////////////////////////////////////////////////////////////
 // Kommutirungswinkel
-
-// Timer B 0/1 init mit compare match Interrupt für Drehzahlmessung
-// hier wird eine Pseudo Drehzahl gemessen zur Berechnung des Kommutierungswinkels
-
-
-void LUT_enable(void)
-{
-	CCL.SEQCTRL0	= CCL_SEQSEL0_DFF_gc        /* D FlipFlop */
-					| CCL_SEQSEL1_DISABLE_gc;	/* Sequential logic disabled */
-
-	CCL.TRUTH0 = 2;
-
-	CCL.LUT0CTRLB	= CCL_INSEL0_AC0_gc			/* AC0 OUT input source */
-					| CCL_INSEL1_MASK_gc;		/* Masked input */
-
-	CCL.LUT0CTRLA	= CCL_CLKSRC_CLKPER_gc		/* CLK_PER is clocking the LUT */
-					| CCL_EDGEDET_DIS_gc		/* Edge detector is disabled */
-					| CCL_FILTSEL_FILTER_gc		/* Filter disabled */
-					| 1 << CCL_ENABLE_bp		/* LUT Enable: enabled */
-					| 1 << CCL_OUTEN_bp;		/* Output Enable: enabled */
-
-	CCL.TRUTH1 = 1;
-
-	CCL.LUT1CTRLC	= CCL_INSEL2_TCB2_gc;		/* TCB2 WO input source */
-
-	CCL.LUT1CTRLA	=	CCL_CLKSRC_CLKPER_gc    /* CLK_PER is clocking the LUT */
-					| CCL_EDGEDET_DIS_gc		/* Edge detector is disabled */
-					| CCL_FILTSEL_DISABLE_gc	/* Filter disabled */
-					| 1 << CCL_ENABLE_bp		/* LUT Enable: enabled */
-					| 0 << CCL_OUTEN_bp;		/* Output Enable: disabled */
-
-	CCL.INTCTRL0 = CCL_INTMODE0_BOTH_gc;		// Interrupt on both Edges
-
-	//CCL.CTRLA		= 1 << CCL_ENABLE_bp		/* Enable: enabled */
-	//				| 0 << CCL_RUNSTDBY_bp;		/* Run in Standby: disabled */
-}
-
-void BLDC_C_Angle_init (void)
-{
-	//ein increment alle 0.1uS bei einem 20MHz Takt
-	TCB0.CTRLA |= TCB_CLKSEL_CLKDIV2_gc;
-	TCB1.CTRLA |= TCB_CLKSEL_CLKDIV2_gc;
-	
-	LUT_enable();
-
-	//EVSYS.CHANNEL2 = EVSYS_GENERATOR_AC0_OUT_gc;
-	EVSYS.CHANNEL2 = EVSYS_GENERATOR_CCL_LUT0_gc;
-	EVSYS.USERTCB1 = EVSYS_CHANNEL_CHANNEL2_gc;
-	EVSYS.USERTCB0 = EVSYS_CHANNEL_CHANNEL3_gc;
-
-	TCB0.CTRLB |= TCB_CNTMODE_FRQ_gc;
-	TCB0.EVCTRL |= TCB_CAPTEI_bm;
-	TCB0.EVCTRL &= ~TCB_EDGE_bm;
-	//TCB0.INTCTRL = TCB_CAPT_bm;
-	TCB0.CTRLA |= TCB_ENABLE_bm;
-	
-	// Single shot mode
-	TCB1.CTRLB |= TCB_CNTMODE_SINGLE_gc;
-	TCB1.EVCTRL |= TCB_CAPTEI_bm;
-	TCB1.EVCTRL |= TCB_EDGE_bm;
-	TCB1.INTCTRL |= TCB_CAPT_bm;
-	TCB1.CTRLA |= TCB_ENABLE_bm;
-}
-
-void AC_Ignore_init (void)
-{
-	EVSYS.CHANNEL3 = EVSYS_GENERATOR_TCB1_CAPT_gc;
-	EVSYS.USERTCB2 = EVSYS_CHANNEL_CHANNEL3_gc;
-	//EVSYS.USERTCB2 = EVSYS_CHANNEL_CHANNEL2_gc;
-	
-	TCB2.CCMP = AC_Ignore_uS;
-	TCB2.CTRLA |= TCB_CLKSEL_CLKDIV2_gc;
-	
-	// Single shot mode
-	TCB2.CTRLB |= TCB_CNTMODE_SINGLE_gc;
-	TCB2.EVCTRL |= TCB_CAPTEI_bm;
-	TCB2.EVCTRL |= TCB_EDGE_bm;
-	TCB2.INTCTRL |= TCB_CAPT_bm;
-	TCB2.CTRLA |= TCB_ENABLE_bm;
-}
-
 
 volatile bool rechne = false;
 volatile uint16_t Time_Delay = min_Time;
@@ -242,7 +155,6 @@ ISR(CCL_CCL_vect)
 // Zwangskommutierung	
 void Zwangskommutierung (void)
 {
-
 	//uint8_t Mid_V = 0;
 	//uint8_t Bemf_V = 0;
 	
