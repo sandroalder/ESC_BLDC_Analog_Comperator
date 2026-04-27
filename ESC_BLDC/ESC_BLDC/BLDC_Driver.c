@@ -34,28 +34,10 @@ void BLDC_PWM_Init (void)
 	
 	// PORTB als Ausgang
 	PORTMUX.TCAROUTEA = PORTMUX_TCA0_PORTB_gc;
-	
-	/* Split mode */
-	// select prescaler
-	// mit prescaler 2 ein increment alle 0.1uS bei einem 20MHz Takt
-	// TCA0.SPLIT.CTRLA |= TCA_SPLIT_CLKSEL_DIV1_gc;
-		
-	// TCA0.SPLIT.CTRLD	=	TCA_SPLIT_SPLITM_bm;
-	// Aktiviere unteren compare match für den PWM
-	// TCA0.SPLIT.CTRLB	=	TCA_SPLIT_LCMP0EN_bm;
-	
-	// setze duty cycle auf 25uS / macht 40kHz Regelfrequenz
-	// TCA0.SPLIT.LPER = 255;	// mit 255 sind es 39.22 kHz
-	// compare match auf 0
-	// TCA0.SPLIT.LCMP0 = 0;
-	
-	// starte Timer
-	// TCA0.SPLIT.CTRLA	|=  TCA_SPLIT_ENABLE_bm;
-		
 		
 	/* Non Split mode */
 	// select prescaler
-	// mit prescaler 2 ein increment alle 0.05uS bei einem 20MHz Takt
+	// Ohne prescaler ein increment alle 0.05uS bei einem 20MHz Takt
 	TCA0.SINGLE.CTRLA |= TCA_SINGLE_CLKSEL_DIV1_gc;
 	
 	TCA0.SINGLE.CTRLB |= TCA_SINGLE_WGMODE_SINGLESLOPE_gc;
@@ -79,43 +61,31 @@ void BLDC_PWM_Set (uint16_t PWM_Wert)
 void BLDC_Driver_init (void)
 {
 	// Init Pins
-	Phase_Port.DIR	|=	INHA;
-	Phase_Port.DIR	|=	INLA;
-	Phase_Port.DIR	|=	INHB;
-	Phase_Port.DIR	|=	INLB;
-	Phase_Port.DIR	|=	INHC;
-	Phase_Port.DIR	|=	INLC;
+	Phase_Port.DIRSET	=	INHA;
+	Phase_Port.DIRSET	=	INLA;
+	Phase_Port.DIRSET	=	INHB;
+	Phase_Port.DIRSET	=	INLB;
+	Phase_Port.DIRSET	=	INHC;
+	Phase_Port.DIRSET	=	INLC;
 	
-	PWM_Port.DIR	|=	PWM;
+	PWM_Port.DIRSET		=	PWM;
 }
 
 // Phasen High / Low Side ein und ausschalten
-void Phase_A_High_off (void)
-	{Phase_Port.DIR	|=	INHA;}
-void Phase_A_High_on (void)
-	{Phase_Port.DIR	&=	~INHA;}
-void Phase_A_Low_off (void)
-	{Phase_Port.OUT	&=	~INLA;}
-void Phase_A_Low_on (void)
-	{Phase_Port.OUT	|=	INLA;}
+static inline void Phase_A_High_off (void)	{Phase_Port.DIRSET	=	INHA;}
+static inline void Phase_A_High_on (void)	{Phase_Port.DIRCLR	=	INHA;}
+static inline void Phase_A_Low_off (void)	{Phase_Port.OUTCLR	=	INLA;}
+static inline void Phase_A_Low_on (void)	{Phase_Port.OUTSET	=	INLA;}
 
-void Phase_B_High_off (void)
-	{Phase_Port.DIR	|=	INHB;}
-void Phase_B_High_on (void)
-	{Phase_Port.DIR	&=	~INHB;}
-void Phase_B_Low_off (void)
-	{Phase_Port.OUT	&=	~INLB;}
-void Phase_B_Low_on (void)
-	{Phase_Port.OUT	|=	INLB;}
+static inline void Phase_B_High_off (void)	{Phase_Port.DIRSET	=	INHB;}
+static inline void Phase_B_High_on (void)	{Phase_Port.DIRCLR	=	INHB;}
+static inline void Phase_B_Low_off (void)	{Phase_Port.OUTCLR	=	INLB;}
+static inline void Phase_B_Low_on (void)	{Phase_Port.OUTSET	=	INLB;}
 	
-void Phase_C_High_off (void)
-	{Phase_Port.DIR	|=	INHC;}
-void Phase_C_High_on (void)
-	{Phase_Port.DIR	&=	~INHC;}
-void Phase_C_Low_off (void)
-	{Phase_Port.OUT	&=	~INLC;}
-void Phase_C_Low_on (void)
-	{Phase_Port.OUT	|=	INLC;}
+static inline void Phase_C_High_off (void)	{Phase_Port.DIRSET	=	INHC;}
+static inline void Phase_C_High_on (void)	{Phase_Port.DIRCLR	=	INHC;}
+static inline void Phase_C_Low_off (void)	{Phase_Port.OUTCLR	=	INLC;}
+static inline void Phase_C_Low_on (void)	{Phase_Port.OUTSET	=	INLC;}
 	
 void BLDC_Stop (void)
 {
@@ -166,7 +136,6 @@ void BLDC_change_Phase (uint8_t Phase)
 	switch (Phase)
 	{
 		case 1:
-		{
 			if (reverse == 0)
 			{
 				Phase_A_High_on();
@@ -175,12 +144,10 @@ void BLDC_change_Phase (uint8_t Phase)
 			else
 			{
 				Phase_A_High_on();
-				Phase_B_High_off();
+				Phase_B_High_off();	
 			}
-			break;
-		}
+		break;
 		case 2:
-		{
 			if (reverse == 0)
 			{
 				Phase_C_Low_on();
@@ -189,71 +156,141 @@ void BLDC_change_Phase (uint8_t Phase)
 			else
 			{
 				Phase_B_Low_on();
-				Phase_C_Low_off();
+				Phase_C_Low_off();	
 			}
-			break;
-		}
+		break;
 		case 3:
-		{
 			if (reverse == 0)
 			{
 				Phase_B_High_on();
-				Phase_A_High_off();
+				Phase_A_High_off();	
 			}
 			else
 			{
 				Phase_C_High_on();
-				Phase_A_High_off();
+				Phase_A_High_off();	
 			}
-			break;
-		}
+		break;
 		case 4:
-		{
 			if (reverse == 0)
 			{
-				Phase_C_Low_off();
-				Phase_A_Low_on();
+				Phase_A_Low_on();	
+				Phase_C_Low_off();		
 			}
 			else
 			{
-				Phase_B_Low_off();
 				Phase_A_Low_on();
+				Phase_B_Low_off();	
 			}
-			break;
-		}
+		break;
 		case 5:
-		{
 			if (reverse == 0)
 			{
 				Phase_C_High_on();
-				Phase_B_High_off();
+				Phase_B_High_off();	
 			}
 			else
 			{
 				Phase_B_High_on();
 				Phase_C_High_off();
 			}
-			break;
-		}
+		break;
 		case 6:
-		{
 			if (reverse == 0)
 			{
 				Phase_B_Low_on();
-				Phase_A_Low_off();
+				Phase_A_Low_off();	
 			}
 			else
 			{
 				Phase_C_Low_on();
 				Phase_A_Low_off();
 			}
-			break;
-		}
+		break;
 	}
 }
 
 /////////////////////////////////////////////////////////////////
 // Motor_BEMF
+
+// Lut wird gebraucht um AC zu nach Kommutierung zu Ignorieren
+void LUT_enable(void)
+{
+	CCL.SEQCTRL0	= CCL_SEQSEL0_DFF_gc        /* D FlipFlop */
+	| CCL_SEQSEL1_DISABLE_gc;	/* Sequential logic disabled */
+
+	CCL.TRUTH0 = 2;
+
+	CCL.LUT0CTRLB	= CCL_INSEL0_AC0_gc			/* AC0 OUT input source */
+	| CCL_INSEL1_MASK_gc;		/* Masked input */
+
+	CCL.LUT0CTRLA	= CCL_CLKSRC_CLKPER_gc		/* CLK_PER is clocking the LUT */
+	| CCL_EDGEDET_DIS_gc		/* Edge detector is disabled */
+	| CCL_FILTSEL_FILTER_gc		/* Filter disabled */
+	| 1 << CCL_ENABLE_bp		/* LUT Enable: enabled */
+	| 1 << CCL_OUTEN_bp;		/* Output Enable: enabled */
+
+	CCL.TRUTH1 = 1;
+
+	CCL.LUT1CTRLC	= CCL_INSEL2_TCB2_gc;		/* TCB2 WO input source */
+
+	CCL.LUT1CTRLA	=	CCL_CLKSRC_CLKPER_gc    /* CLK_PER is clocking the LUT */
+	| CCL_EDGEDET_DIS_gc		/* Edge detector is disabled */
+	| CCL_FILTSEL_DISABLE_gc	/* Filter disabled */
+	| 1 << CCL_ENABLE_bp		/* LUT Enable: enabled */
+	| 0 << CCL_OUTEN_bp;		/* Output Enable: disabled */
+
+	CCL.INTCTRL0 = CCL_INTMODE0_BOTH_gc;		// Interrupt on both Edges
+
+	//CCL.CTRLA		= 1 << CCL_ENABLE_bp		/* Enable: enabled */
+	//				| 0 << CCL_RUNSTDBY_bp;		/* Run in Standby: disabled */
+}
+
+void BLDC_C_Angle_init (void)
+{
+	//ein increment alle 0.1uS bei einem 20MHz Takt
+	TCB0.CTRLA |= TCB_CLKSEL_CLKDIV2_gc;
+	TCB1.CTRLA |= TCB_CLKSEL_CLKDIV2_gc;
+	
+	LUT_enable();
+
+	//EVSYS.CHANNEL2 = EVSYS_GENERATOR_AC0_OUT_gc;
+	EVSYS.CHANNEL2 = EVSYS_GENERATOR_CCL_LUT0_gc;
+	EVSYS.USERTCB1 = EVSYS_CHANNEL_CHANNEL2_gc;
+	EVSYS.USERTCB0 = EVSYS_CHANNEL_CHANNEL3_gc;
+
+	TCB0.CTRLB |= TCB_CNTMODE_FRQ_gc;
+	TCB0.EVCTRL |= TCB_CAPTEI_bm;
+	TCB0.EVCTRL &= ~TCB_EDGE_bm;
+	//TCB0.INTCTRL = TCB_CAPT_bm;
+	TCB0.CTRLA |= TCB_ENABLE_bm;
+	
+	// Single shot mode
+	TCB1.CTRLB |= TCB_CNTMODE_SINGLE_gc;
+	TCB1.EVCTRL |= TCB_CAPTEI_bm;
+	TCB1.EVCTRL |= TCB_EDGE_bm;
+	TCB1.INTCTRL |= TCB_CAPT_bm;
+	TCB1.CTRLA |= TCB_ENABLE_bm;
+}
+
+void AC_Ignore_init (void)
+{
+	EVSYS.CHANNEL3 = EVSYS_GENERATOR_TCB1_CAPT_gc;
+	EVSYS.USERTCB2 = EVSYS_CHANNEL_CHANNEL3_gc;
+	//EVSYS.USERTCB2 = EVSYS_CHANNEL_CHANNEL2_gc;
+	
+	TCB2.CCMP = AC_Ignore_uS;
+	TCB2.CTRLA |= TCB_CLKSEL_CLKDIV2_gc;
+	
+	// Single shot mode
+	TCB2.CTRLB |= TCB_CNTMODE_SINGLE_gc;
+	TCB2.EVCTRL |= TCB_CAPTEI_bm;
+	TCB2.EVCTRL |= TCB_EDGE_bm;
+	TCB2.INTCTRL |= TCB_CAPT_bm;
+	TCB2.CTRLA |= TCB_ENABLE_bm;
+}
+
+
 
 void BEMF_ADC_init (void)
 {
@@ -277,6 +314,74 @@ void BEMF_ADC_init (void)
 	ADC0_CTRLC	=	ADC_REFSEL_VREFA_gc
 				|	ADC_PRESC_DIV8_gc;
 }
+
+void BEMF_AC_init (void)
+{
+	// Nur nötig wegen Quick-Fix auf Hardware. Könnte später entfernt werden
+	PORTC.PIN7CTRL &= ~PORT_ISC_gm;
+	PORTC.PIN7CTRL |= PORT_ISC_INPUT_DISABLE_gc;
+	PORTD.PIN3CTRL &= ~PORT_ISC_gm;
+	PORTD.PIN3CTRL |= PORT_ISC_INPUT_DISABLE_gc;
+	PORTD.PIN0CTRL &= ~PORT_ISC_gm;
+	PORTD.PIN0CTRL |= PORT_ISC_INPUT_DISABLE_gc;
+	
+	// Schalte digitale Input Buffer aus
+	BEMF_Port_AC.BEMF_Mid_AC_PCTRL	&= ~PORT_ISC_gm;
+	BEMF_Port_AC.BEMF_Mid_AC_PCTRL	|= PORT_ISC_INPUT_DISABLE_gc;
+	BEMF_Port_AC.BEMF_A_AC_PCTRL	&= ~PORT_ISC_gm;
+	BEMF_Port_AC.BEMF_A_AC_PCTRL	|= PORT_ISC_INPUT_DISABLE_gc;
+	BEMF_Port_AC.BEMF_B_AC_PCTRL	&= ~PORT_ISC_gm;
+	BEMF_Port_AC.BEMF_B_AC_PCTRL	|= PORT_ISC_INPUT_DISABLE_gc;
+	BEMF_Port_AC.BEMF_C_AC_PCTRL	&= ~PORT_ISC_gm;
+	BEMF_Port_AC.BEMF_C_AC_PCTRL	|= PORT_ISC_INPUT_DISABLE_gc;
+	
+	
+	AC0.MUXCTRLA = BEMF_NEG_AC;			// setze Mid_V auf negativen Input
+
+	// Aktiviere AC und setze ihn auf beide Flanken / Hysterese 10mV
+	AC0.CTRLA = AC_ENABLE_bm | AC_INTMODE_BOTHEDGE_gc | AC_HYSMODE_10mV_gc;
+	//AC0.INTCTRL = AC_CMP_bm;
+}
+
+
+void BLDC_AC_set(uint8_t Phase)
+{
+	switch (Phase)
+	{
+		case 1:
+			if (reverse == 0)
+				AC0.MUXCTRLA = BEMF_C_POS_AC | BEMF_NEG_AC;
+			else
+				AC0.MUXCTRLA = BEMF_B_POS_AC | BEMF_NEG_AC;
+		break;
+		case 2:
+			if (reverse == 0)
+				AC0.MUXCTRLA = BEMF_B_POS_AC | BEMF_NEG_AC;
+			else
+				AC0.MUXCTRLA = BEMF_C_POS_AC | BEMF_NEG_AC;
+		break;
+		case 3:
+			AC0.MUXCTRLA = BEMF_A_POS_AC | BEMF_NEG_AC;
+		break;
+		case 4:
+			if (reverse == 0)
+				AC0.MUXCTRLA = BEMF_C_POS_AC | BEMF_NEG_AC;
+			else
+				AC0.MUXCTRLA = BEMF_B_POS_AC | BEMF_NEG_AC;
+		break;
+		case 5:
+			if (reverse == 0)
+				AC0.MUXCTRLA = BEMF_B_POS_AC | BEMF_NEG_AC;
+			else
+				AC0.MUXCTRLA = BEMF_C_POS_AC | BEMF_NEG_AC;
+		break;
+		case 6:
+			AC0.MUXCTRLA = BEMF_A_POS_AC | BEMF_NEG_AC;
+		break;
+	}
+}
+
+
 
 //  ADC Wert einlesen und filtern
 uint8_t ADC_read_and_filter(void)
@@ -311,47 +416,35 @@ uint8_t ADC_read_BEMF_V (uint8_t Phase)
 	switch (Phase)
 	{
 		case 1:
-		{
 			if (reverse == 0)
 				ADC0.MUXPOS = ADC_POS_BEMF_C;
 			else
 				ADC0.MUXPOS = ADC_POS_BEMF_B;			
-			break;
-		}
+		break;
 		case 2:
-		{
 			if (reverse == 0)
 				ADC0.MUXPOS = ADC_POS_BEMF_B;
 			else
 				ADC0.MUXPOS = ADC_POS_BEMF_C;
-			break;
-		}
+		break;
 		case 3:
-		{
 			ADC0.MUXPOS = ADC_POS_BEMF_A;
-			break;
-		}
+		break;
 		case 4:
-		{
 			if (reverse == 0)
 				ADC0.MUXPOS = ADC_POS_BEMF_C;
 			else
 				ADC0.MUXPOS = ADC_POS_BEMF_B;
-			break;
-		}
+		break;
 		case 5:
-		{
 			if (reverse == 0)
 				ADC0.MUXPOS = ADC_POS_BEMF_B;
 			else
 				ADC0.MUXPOS = ADC_POS_BEMF_C;
-			break;
-		}
+		break;
 		case 6:
-		{
 			ADC0.MUXPOS = ADC_POS_BEMF_A;
-			break;
-		}
+		break;
 	}
 	BEMF_V = ADC_read_and_filter();
 	return BEMF_V;

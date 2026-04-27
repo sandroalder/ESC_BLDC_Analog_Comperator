@@ -1,9 +1,4 @@
-/*
- * PWM_Protokolle.h
- *
- * Created: 05.02.2026 12:23:29
- *  Author: SA061401
- */ 
+
 
 #include <inttypes.h>
 

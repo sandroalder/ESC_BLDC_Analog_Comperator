@@ -19,12 +19,12 @@
 // mit prescaler 1 ein increment alle 0.05uS bei einem 20MHz Takt / max. Pulse 3’276.8uS
 #define CLK_select	TCB_CLKSEL_CLKDIV1_gc			// für d_shot150
 
-#define TCBx		TCB2							// Timer counterB2
-#define	TCBx_vect	TCB2_INT_vect
-#define USERTCBx	USERTCB2						// Timer counterB2
+#define TCBx		TCB3							// Timer counterB3
+#define	TCBx_vect	TCB3_INT_vect
+#define USERTCBx	USERTCB3						// Timer counterB3
 
-#define CHANNELx	EVSYS.CHANNEL0					// Channel 0
-#define EV_CHANNEL	EVSYS_CHANNEL_CHANNEL0_gc		// Channel 0
+#define CHANNELx	EVSYS.CHANNEL1					// Channel 1
+#define EV_CHANNEL	EVSYS_CHANNEL_CHANNEL1_gc		// Channel 1
 
 #define PORTx_PINx	EVSYS_GENERATOR_PORT0_PIN7_gc	// PortA Pin7
 //#define PORTx_PINx	EVSYS_GENERATOR_PORT1_PIN2_gc	// PortB Pin2
@@ -50,8 +50,8 @@ ISR(TCBx_vect)
 	static  uint16_t	d_shot_buff = 0;	// static sorgt dafür, dass der Wert erhalten bleibt
 	static  uint8_t		d_shot_cnt = 0;
 	
-	uint16_t tmp_CCMP = TCBx.CCMP;			// Zugriffe auf TCBx.CCMP dauern länger. Den Wert zwischenzuspeichern optimiert die Laufzeit
-	
+	uint16_t tmp_CCMP = TCBx.CCMP;			// Zugriffe auf TCBx.CCMP dauern länger
+											// Den Wert zwischenzuspeichern optimiert die Laufzeit
 	d_shot_buff <<= 1;
 	if (tmp_CCMP < Bit_Mitte)
 	d_shot_buff++;
@@ -72,11 +72,11 @@ uint16_t dshot_read (void)
 	
 	uint16_t frame;
 	uint16_t data;
-	cli();							//blockt Interrupt solange ISR schreibt
+	cli();							//blockt Interrupt solange Wert ausgelesen wird
 	frame = d_shot_crc << 1;
 	sei();
 		data = frame >> 4;			// 12 Bit: throttle + telemetry
-		// Überprüfe CRC => Verwerfe letztes Bit da DShot ultrascheisse ist
+		// Überprüfe Checksumme => Verwerfe letztes Bit, da DShot ultrascheisse ist
 		// und Dieser Timer nicht dafür geeignet
 		if ((frame & 0x0E) == ((data ^ (data >> 4) ^ (data >> 8)) & 0x0E))
 		{

@@ -15,14 +15,14 @@
 // Konfiguriere hier die Parameter
 
 // mit prescaler 1 ein increment alle 0.05uS bei einem 20MHz Takt / max. Pulse 3’276.8uS
-#define CLK_select	TCB_CLKSEL_CLKDIV1_gc			// für d_shot150
+#define CLK_select	TCB_CLKSEL_CLKDIV1_gc			
 
 #define TCBx		TCB3							// Timer counterB3
 #define	TCBx_vect	TCB3_INT_vect
 #define USERTCBx	USERTCB3						// Timer counterB3
 
-#define CHANNELx	EVSYS.CHANNEL0					// Channel 0
-#define EV_CHANNEL	EVSYS_CHANNEL_CHANNEL0_gc		// Channel 0
+#define CHANNELx	EVSYS.CHANNEL1					// Channel 1
+#define EV_CHANNEL	EVSYS_CHANNEL_CHANNEL1_gc		// Channel 1
 
 #define PORTx_PINx	EVSYS_GENERATOR_PORT0_PIN7_gc	// PortA Pin7
 //#define PORTx_PINx	EVSYS_GENERATOR_PORT1_PIN2_gc	// PortB Pin2
@@ -58,21 +58,19 @@ void PWM_calibrate (uint16_t raw_pulse)
 	scaling_5_Zaehler = (float)scaling_5 * 256;
 }
 
-uint32_t Multishot_read (void)
+uint16_t Multishot_read (void)
 {
     uint32_t tmp;
 
-    cli();
     tmp = TCBx.CCMP;
-    sei();
 
     if (tmp > zero_pos)
 		tmp -= zero_pos;
     else
 		tmp = 0;
 
-    //tmp *= (float)scaling_5;
-	tmp = (tmp * scaling_5_Zaehler) scaling_Nenner;		// shift >> 8 statt Bruch
+    //tmp *= (float)scaling_5;		// shift >> 8 statt Bruch
+	tmp = (tmp * scaling_5_Zaehler) scaling_Nenner;
 	
     if (tmp > 2047)
 		tmp = 2047;
@@ -92,7 +90,7 @@ void PWM_shot_init (void)
 {
 	// Setze Port als input event
 	CHANNELx = PORTx_PINx;
-	// Verbinde zu event channel 0
+	// Verbinde zu event channel 1
 	EVSYS.USERTCBx = EV_CHANNEL;
 	
 	// Aktviere TCB ohne Prescaler

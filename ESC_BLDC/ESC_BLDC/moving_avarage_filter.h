@@ -1,0 +1,20 @@
+
+// Moving Avarage Filter
+
+// n = grösse von array / Anzahlw Werte, die gefiltert werden
+// Aus Effizienzgründen sind 8 und 16Bit getrennt
+// Werden mehrere gebraucht muss eine zusätzliche Routine hinzugefügt werden
+
+
+#define n_1		12	// Anzahl Werte
+
+void Moving_Avarage_Filter_16Bit_1_preset(uint16_t value);
+
+uint16_t Moving_Avarage_Filter_16Bit_1(uint16_t new_value);
+
+
+
+/*
+#define n_2		3	// Anzahl Werte
+uint16_t Moving_Avarage_Filter_16Bit_2(uint16_t new_value);
+*/
